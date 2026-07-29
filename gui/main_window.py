@@ -1,3 +1,4 @@
+
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -9,7 +10,12 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QHeaderView
 )
+
 from PySide6.QtCore import Qt
+
+from PySide6.QtGui import QColor
+
+from PySide6.QtGui import QFont
 
 from scanner.scanner import scan
 
@@ -19,7 +25,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-
+        
         self.setWindowTitle("TradePilot Professional")
         self.resize(1200, 800)
 
@@ -31,11 +37,11 @@ class MainWindow(QMainWindow):
 
         titel = QLabel("TradePilot Professional")
         titel.setAlignment(Qt.AlignCenter)
-        titel.setStyleSheet("""
-            font-size:24px;
-            font-weight:bold;
-            padding:20px;
-        """)
+         # titel.setStyleSheet("""
+         #   font-size:24px;
+         #   font-weight:bold;
+         #   padding:20px;
+         #""")
         layout.addWidget(titel)
 
         self.scan_button = QPushButton("▶ Scan Markt")
@@ -67,6 +73,61 @@ class MainWindow(QMainWindow):
         self.status = QStatusBar()
         self.status.showMessage("Gereed")
         self.setStatusBar(self.status)
+        self.setStyleSheet("""
+        QMainWindow {
+            background-color: #2b2b2b;
+        }
+
+        QWidget {
+            background-color: #2b2b2b;
+            color: white;
+            font-size: 11pt;
+        }
+
+        QLabel {
+            color: white;
+            font-size: 11pt;
+            font-weight: bold;
+        }
+
+        QPushButton {
+            background-color: #3c3f41;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 11pt;
+            font-weight: bold;
+        }
+
+        QPushButton:hover {
+            background-color: #4c5052;
+        }
+
+        QTableWidget {
+            background-color: #1e1e1e;
+            color: white;
+            gridline-color: #444;
+            font-size: 11pt;
+            alternate-background-color: #252526;
+            selection-background-color: #0078d7;
+            selection-color: white;
+        }
+
+        QHeaderView::section {
+            background-color: #3c3f41;
+            color: white;
+            font-weight: bold;
+            border: 1px solid #555;
+            padding: 6px;
+        }
+
+        QStatusBar {
+            color: white;
+            background-color: #3c3f41;
+        }
+        """)
+        
         self.table.setSortingEnabled(True)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
@@ -74,16 +135,9 @@ class MainWindow(QMainWindow):
 
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Stretch)
-
-    def open_detail(self, row, column):
-        if not self.resultaten:
-            return
-
-        venster = DetailWindow(self.resultaten[row])
-        venster.exec()
-
+    
     def scan_market(self):
-
+       
         self.status.showMessage("Scannen...")
 
         resultaten = scan()
@@ -94,17 +148,38 @@ class MainWindow(QMainWindow):
 
         for row, aandeel in enumerate(resultaten):
             self.table.setItem(row, 0, QTableWidgetItem(aandeel["ticker"]))
-            self.table.setItem(row, 1, QTableWidgetItem(f'{aandeel["prijs"]:.2f}'))
-            self.table.setItem(row, 2, QTableWidgetItem(str(aandeel["score_daytrade"])))
-            self.table.setItem(row, 3, QTableWidgetItem(str(aandeel["score_swing"])))
-            self.table.setItem(row, 4, QTableWidgetItem(str(aandeel["score_invest"])))
-            self.table.setItem(row, 5, QTableWidgetItem(f'{aandeel["rsi"]:.2f}'))
 
-        if resultaten:
+            prijs_item = QTableWidgetItem(f'{aandeel["prijs"]:.2f}')
+            prijs_item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 1, prijs_item)
 
-            beste_day = max(resultaten, key=lambda x: x["score_daytrade"])
-            beste_swing = max(resultaten, key=lambda x: x["score_swing"])
-            beste_invest = max(resultaten, key=lambda x: x["score_invest"])
+            self.table.setItem(
+                row,
+                2,
+                self.kleur_score(aandeel["score_daytrade"])
+            )
+
+            self.table.setItem(
+                row,
+                3,
+                self.kleur_score(aandeel["score_swing"])
+            )
+
+            self.table.setItem(
+                row,
+                4,
+                self.kleur_score(aandeel["score_invest"])
+            )
+
+            rsi_item = QTableWidgetItem(f'{aandeel["rsi"]:.2f}')
+            rsi_item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 5, rsi_item)
+
+            if resultaten:
+
+                beste_day = max(resultaten, key=lambda x: x["score_daytrade"])
+                beste_swing = max(resultaten, key=lambda x: x["score_swing"])
+                beste_invest = max(resultaten, key=lambda x: x["score_invest"])
 
             self.best_day.setText(
                 f"🟢 Beste Daytrade: {beste_day['ticker']} ({beste_day['score_daytrade']})"
@@ -119,19 +194,36 @@ class MainWindow(QMainWindow):
             )
         
         
-        self.status.showMessage(f"{len(resultaten)} aandelen gescand.")
+            self.status.showMessage(f"{len(resultaten)} aandelen gescand.")
 
     def open_detail(self, row, column):
         if not self.resultaten:
-            print("Geen resultaten")
             return
+        
+        self.detail_window = DetailWindow(self.resultaten[row])
+        self.detail_window.show()
+        
+    def kleur_score(self, score):
 
-        print("Stap 2")
+        item = QTableWidgetItem(str(score))
 
-        venster = DetailWindow(self.resultaten[row])
+        if score >= 80:
+            item.setBackground(QColor("#006400"))   # donkergroen
+            item.setForeground(QColor("#FFFFFF"))   # wit
 
-        print("Stap 3")
+        elif score >= 60:
+            item.setBackground(QColor("#B8860B"))   # donker goud
+            item.setForeground(QColor("#000000"))   # zwart
 
-        venster.exec()
+        else:
+            item.setBackground(QColor("#8B0000"))   # donkerrood
+            item.setForeground(QColor("#FFFFFF"))   # wit
 
-        print("Stap 4")
+        font = item.font()
+        font.setBold(True)
+        item.setFont(font)
+
+        item.setTextAlignment(Qt.AlignCenter)
+
+        return item
+       

@@ -17,5 +17,10 @@ class DetailWindow(QDialog):
         layout.addWidget(QLabel(f"Swing: {aandeel['score_swing']}"))
         layout.addWidget(QLabel(f"Invest: {aandeel['score_invest']}"))
         layout.addWidget(QLabel(f"RSI: {aandeel['rsi']:.2f}"))
+        layout.addWidget(QLabel(f"EMA20: {aandeel['ema20']:.2f}"))
+        layout.addWidget(QLabel(f"EMA50: {aandeel['ema50']:.2f}"))
+        layout.addWidget(QLabel(f"MACD: {aandeel['macd']:.2f}"))
+        layout.addWidget(QLabel(f"Signaallijn: {aandeel['signaal']:.2f}"))
+
 
         self.setLayout(layout)
