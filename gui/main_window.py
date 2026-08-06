@@ -2,8 +2,9 @@
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
-    QVBoxLayout,
+    QDialog,
     QLabel,
+    QFormLayout,
     QPushButton,
     QStatusBar,
     QTableWidget,
@@ -13,13 +14,17 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtCore import Qt
 
+from PySide6.QtCore import QThread
+
 from PySide6.QtGui import QColor
 
-from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QFormLayout
 
 from scanner.scanner import scan
 
 from gui.detail_window import DetailWindow
+
+from gui.scan_worker import ScanWorker
 
 class MainWindow(QMainWindow):
 
@@ -32,41 +37,38 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        layout = QVBoxLayout()
+        layout = QFormLayout()
         central_widget.setLayout(layout)
 
         titel = QLabel("TradePilot Professional")
         titel.setAlignment(Qt.AlignCenter)
-         # titel.setStyleSheet("""
-         #   font-size:24px;
-         #   font-weight:bold;
-         #   padding:20px;
-         #""")
-        layout.addWidget(titel)
+       
+        layout.addRow(titel)
 
         self.scan_button = QPushButton("▶ Scan Markt")
         self.scan_button.clicked.connect(self.scan_market)
-        layout.addWidget(self.scan_button)
+        layout.addRow(self.scan_button)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(6)
+        self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
             "Ticker",
             "Prijs",
             "Day",
             "Swing",
             "Invest",
-            "RSI"
+            "RSI",
+            "Status"
         ])
               
         self.best_day = QLabel("🟢 Beste Daytrade: -")
         self.best_swing = QLabel("🔵 Beste Swing: -")
         self.best_invest = QLabel("🟣 Beste Investering: -")
 
-        layout.addWidget(self.best_day)
-        layout.addWidget(self.best_swing)
-        layout.addWidget(self.best_invest)
-        layout.addWidget(self.table)
+        layout.addRow(self.best_day)
+        layout.addRow(self.best_swing)
+        layout.addRow(self.best_invest)
+        layout.addRow(self.table)
         self.resultaten = []
         self.table.cellDoubleClicked.connect(self.open_detail)
 
@@ -138,15 +140,35 @@ class MainWindow(QMainWindow):
     
     def scan_market(self):
        
+        self.scan_button.setEnabled(False)
+
         self.status.showMessage("Scannen...")
 
-        resultaten = scan()
+        self.table.setRowCount(0)
+
+        self.thread = QThread()
+        self.worker = ScanWorker()
+
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.scan_finished)
+        self.worker.finished.connect(self.thread.quit)
+
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.worker.finished.connect(self.worker.deleteLater)
+
+        self.thread.start()
+
+    def scan_finished(self, resultaten):
+
         self.resultaten = resultaten
         
         self.table.setRowCount(len(resultaten))
         self.table.resizeRowsToContents()
 
         for row, aandeel in enumerate(resultaten):
+            
             self.table.setItem(row, 0, QTableWidgetItem(aandeel["ticker"]))
 
             prijs_item = QTableWidgetItem(f'{aandeel["prijs"]:.2f}')
@@ -175,30 +197,23 @@ class MainWindow(QMainWindow):
             rsi_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 5, rsi_item)
 
-            if resultaten:
+            if aandeel["score_daytrade"] >= 80:
+                status = "Bullish"
 
-                beste_day = max(resultaten, key=lambda x: x["score_daytrade"])
-                beste_swing = max(resultaten, key=lambda x: x["score_swing"])
-                beste_invest = max(resultaten, key=lambda x: x["score_invest"])
+            elif aandeel["score_daytrade"] >= 60:
+                status = "Neutraal"
 
-            self.best_day.setText(
-                f"🟢 Beste Daytrade: {beste_day['ticker']} ({beste_day['score_daytrade']})"
-            )
+            else:
+                status = "Bearish"
+           
+            self.table.setItem(row, 6, self.status_item(status))
 
-            self.best_swing.setText(
-                f"🔵 Beste Swing: {beste_swing['ticker']} ({beste_swing['score_swing']})"
-            )
-
-            self.best_invest.setText(
-                f"🟣 Beste Investering: {beste_invest['ticker']} ({beste_invest['score_invest']})"
-            )
-        
-        
-            self.status.showMessage(f"{len(resultaten)} aandelen gescand.")
-
+        self.scan_button.setEnabled(True)
+        self.status.showMessage(f"{len(resultaten)} aandelen gescand.") 
+   
     def open_detail(self, row, column):
         if not self.resultaten:
-            return
+            return  
         
         self.detail_window = DetailWindow(self.resultaten[row])
         self.detail_window.show()
@@ -226,4 +241,34 @@ class MainWindow(QMainWindow):
         item.setTextAlignment(Qt.AlignCenter)
 
         return item
-       
+ 
+
+    def __lt__(self, other):
+        return self.volgorde[self.text()] < self.volgorde[other.text()]
+
+    def status_item(self, status):
+              
+        item = QTableWidgetItem(status)
+
+        item.setTextAlignment(Qt.AlignCenter)
+
+        font = item.font()
+        font.setBold(True)
+        item.setFont(font)
+
+        if status == "Bullish":
+            item.setBackground(QColor("#006400"))
+            item.setForeground(QColor("#FFFFFF"))
+
+        elif status == "Neutraal":
+            item.setBackground(QColor("#B8860B"))
+            item.setForeground(QColor("#000000"))
+
+        else:
+            # item.setBackground(QColor("#8B0000"))
+            # item.setForeground(QColor("#FFFFFF"))
+
+            item.setBackground(QColor("#8B0000"))
+            item.setForeground(QColor("#FFFFFF"))
+        
+        return item

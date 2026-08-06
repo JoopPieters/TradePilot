@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QDialog, QFormLayout, QLabel
 
 
 class DetailWindow(QDialog):
@@ -9,18 +9,25 @@ class DetailWindow(QDialog):
         self.setWindowTitle(aandeel["ticker"])
         self.resize(450, 350)
 
-        layout = QVBoxLayout()
+        layout = QFormLayout()
 
-        layout.addWidget(QLabel(f"Ticker: {aandeel['ticker']}"))
-        layout.addWidget(QLabel(f"Prijs: {aandeel['prijs']:.2f}"))
-        layout.addWidget(QLabel(f"Daytrade: {aandeel['score_daytrade']}"))
-        layout.addWidget(QLabel(f"Swing: {aandeel['score_swing']}"))
-        layout.addWidget(QLabel(f"Invest: {aandeel['score_invest']}"))
-        layout.addWidget(QLabel(f"RSI: {aandeel['rsi']:.2f}"))
-        layout.addWidget(QLabel(f"EMA20: {aandeel['ema20']:.2f}"))
-        layout.addWidget(QLabel(f"EMA50: {aandeel['ema50']:.2f}"))
-        layout.addWidget(QLabel(f"MACD: {aandeel['macd']:.2f}"))
-        layout.addWidget(QLabel(f"Signaallijn: {aandeel['signaal']:.2f}"))
+        layout.addRow(QLabel(f"Ticker: {aandeel['ticker']}"))
+        layout.addRow(QLabel(f"Prijs: {aandeel['prijs']:.2f}"))
+        layout.addRow(QLabel(f"Openingskoers: {aandeel['open']:.2f}"))
+        if aandeel["boven_open"]:
+            layout.addRow(QLabel("📈 Boven openingskoers"))
+        else:
+            layout.addRow(QLabel("📉 Onder openingskoers"))
+        layout.addRow(QLabel(f"Daytrade: {aandeel['score_daytrade']}"))
+        layout.addRow(QLabel(f"Swing: {aandeel['score_swing']}"))
+        layout.addRow(QLabel(f"Invest: {aandeel['score_invest']}"))
+        layout.addRow(QLabel(f"RSI: {aandeel['rsi']:.2f}"))
+        layout.addRow(QLabel(f"EMA20: {aandeel['ema20']:.2f}"))
+        layout.addRow(QLabel(f"EMA50: {aandeel['ema50']:.2f}"))
+        layout.addRow(QLabel(f"MACD: {aandeel['macd']:.2f}"))
+        layout.addRow(QLabel(f"Signaallijn: {aandeel['signaal']:.2f}"))
+        layout.addRow("Trend:", QLabel(aandeel["trend"]))
+        layout.addRow("Trendscore:", QLabel(f'{aandeel["trendscore"]}/3'))
 
 
         self.setLayout(layout)

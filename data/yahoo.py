@@ -17,10 +17,12 @@ def haal_koers_op(ticker):
             return None
 
         slotkoers = float(historie["Close"].iloc[-1])
+        openingskoers = float(historie["Open"].iloc[-1])
 
         return {
             "ticker": ticker,
             "prijs": slotkoers,
+            "open": openingskoers,
             "historie": historie
         }
 

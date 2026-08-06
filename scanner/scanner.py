@@ -3,7 +3,7 @@ from indicators.ema import alle_ema
 from indicators.rsi import bereken_rsi
 from indicators.macd import bereken_macd
 from strategy.engine import analyseer_aandeel
-
+from strategy.trend import bepaal_trend
 
 def scan():
 
@@ -18,6 +18,8 @@ def scan():
 
         close = gegevens["historie"]["Close"]
         prijs = gegevens["prijs"]
+        openingskoers = gegevens["open"]
+        boven_open = prijs >= openingskoers
 
         ema = alle_ema(close)
         rsi = bereken_rsi(close)
@@ -31,9 +33,18 @@ def scan():
             signaal,
         )
 
+        trend = bepaal_trend(
+        ema,
+        macd,
+        signaal,
+        rsi,
+        )
+
         resultaten.append({
             "ticker": ticker,
             "prijs": prijs,
+            "open": openingskoers,
+            "boven_open": boven_open,
 
             "score_daytrade": analyse["daytrade"]["score"],
             "score_swing": analyse["swing"]["score"],
@@ -48,11 +59,13 @@ def scan():
             "ema50": ema["EMA50"],
             "macd": macd,
             "signaal": signaal,
+            "trend": trend["tekst"],
+            "trendscore": trend["score"],
         })
 
-    resultaten.sort(
-        key=lambda x: x["score_swing"],
-        reverse=True
-    )
+        resultaten.sort(
+            key=lambda x: x["score_swing"],
+            reverse=True
+        )
 
     return resultaten
