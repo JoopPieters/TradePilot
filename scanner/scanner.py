@@ -40,6 +40,15 @@ def scan():
         rsi,
         )
 
+        if rsi is None:
+            print(f"WAARSCHUWING: {ticker} heeft geen RSI")
+
+        if analyse["swing"]["score"] is None:
+            print(f"WAARSCHUWING: {ticker} heeft geen swingscore")
+
+        if analyse["invest"]["score"] is None:
+            print(f"WAARSCHUWING: {ticker} heeft geen investscore")
+            
         resultaten.append({
             "ticker": ticker,
             "prijs": prijs,
