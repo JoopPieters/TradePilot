@@ -1,4 +1,8 @@
-from data.yahoo import lees_watchlist, haal_koers_op
+from data.yahoo import (
+    lees_watchlist,
+    haal_koers_op,
+    haal_laatste_afgesloten_week,
+)
 from indicators.ema import alle_ema
 from indicators.rsi import bereken_rsi
 from indicators.macd import bereken_macd
@@ -15,11 +19,19 @@ def scan():
 
         if gegevens is None:
             continue
+        invest_data = haal_laatste_afgesloten_week(ticker)
+
+        if invest_data is None:
+            continue
 
         close = gegevens["historie"]["Close"]
         prijs = gegevens["prijs"]
         openingskoers = gegevens["open"]
         boven_open = prijs >= openingskoers
+        invest_close = invest_data["Close"]
+        invest_ema = alle_ema(invest_close)
+        invest_rsi = bereken_rsi(invest_close)
+        invest_macd, invest_signaal = bereken_macd(invest_close)
 
         ema = alle_ema(close)
         rsi = bereken_rsi(close)
@@ -31,6 +43,11 @@ def scan():
             rsi,
             macd,
             signaal,
+            invest_close.iloc[-1],
+            invest_ema,
+            invest_rsi,
+            invest_macd,
+            invest_signaal,
         )
 
         trend = bepaal_trend(
@@ -64,6 +81,7 @@ def scan():
             "redenen_invest": analyse["invest"]["redenen"],
 
             "rsi": rsi,
+            "ema9": ema["EMA9"],
             "ema20": ema["EMA20"],
             "ema50": ema["EMA50"],
             "macd": macd,
@@ -71,10 +89,9 @@ def scan():
             "trend": trend["tekst"],
             "trendscore": trend["score"],
         })
-
+               
         resultaten.sort(
             key=lambda x: x["score_swing"],
             reverse=True
         )
-
     return resultaten

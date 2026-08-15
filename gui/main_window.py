@@ -16,6 +16,8 @@ from PySide6.QtCore import Qt
 
 from PySide6.QtCore import QThread
 
+from PySide6.QtCore import QTimer
+
 from PySide6.QtGui import QColor
 
 from PySide6.QtWidgets import QFormLayout
@@ -47,6 +49,7 @@ class MainWindow(QMainWindow):
 
         self.scan_button = QPushButton("▶ Scan Markt")
         self.scan_button.clicked.connect(self.scan_market)
+        QTimer.singleShot(100, self.scan_market)
         layout.addRow(self.scan_button)
 
         self.table = QTableWidget()

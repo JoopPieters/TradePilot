@@ -3,16 +3,27 @@ from strategy.score_swing import bereken_score_swing
 from strategy.score_invest import bereken_score_invest
 
 
-def analyseer_aandeel(prijs, ema, rsi, macd, signaal):
+def analyseer_aandeel(
+    prijs,
+    ema,
+    rsi,
+    macd,
+    signaal,
+    invest_prijs,
+    invest_ema,
+    invest_rsi,
+    invest_macd,
+    invest_signaal,
+):
 
     score_daytrade, redenen_daytrade = bereken_score_daytrade(
-        prijs,
-        ema["EMA20"],      # Later vervangen door EMA9
-        ema["EMA20"],
-        rsi,
-        macd,
-        signaal,
-    )
+    prijs,
+    ema["EMA9"],
+    ema["EMA20"],
+    rsi,
+    macd,
+    signaal,
+)
 
     score_swing, redenen_swing = bereken_score_swing(
         prijs,
@@ -25,12 +36,12 @@ def analyseer_aandeel(prijs, ema, rsi, macd, signaal):
     )
 
     score_invest, redenen_invest = bereken_score_invest(
-        prijs,
-        ema["EMA50"],
-        ema["EMA200"],
-        rsi,
-        macd,
-        signaal,
+        invest_prijs,
+        invest_ema["EMA50"],
+        invest_ema["EMA200"],
+        invest_rsi,
+        invest_macd,
+        invest_signaal,
     )
 
     return {
