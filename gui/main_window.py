@@ -166,7 +166,7 @@ class MainWindow(QMainWindow):
     def scan_finished(self, resultaten):
 
         self.resultaten = resultaten
-        
+        self.table.setSortingEnabled(False)
         self.table.setRowCount(len(resultaten))
         self.table.resizeRowsToContents()
 
@@ -211,6 +211,8 @@ class MainWindow(QMainWindow):
            
             self.table.setItem(row, 6, self.status_item(status))
 
+        self.table.setSortingEnabled(True)
+        
         self.scan_button.setEnabled(True)
         self.status.showMessage(f"{len(resultaten)} aandelen gescand.") 
    
