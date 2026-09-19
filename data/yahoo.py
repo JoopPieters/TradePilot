@@ -71,3 +71,44 @@ def haal_laatste_afgesloten_week(ticker):
     except Exception as fout:
         print(f"Fout bij afgesloten week {ticker}: {fout}")
         return None
+    
+def haal_marktdata_op():
+    """Haal belangrijke algemene marktgegevens op."""
+
+    tickers = {
+        "nasdaq": "^IXIC",
+        "sp500": "^GSPC",
+        "semiconductor": "^SOX",
+        "nasdaq_futures": "NQ=F",
+        "sp500_futures": "ES=F",
+        "eur_usd": "EURUSD=X",
+        "us10y": "^TNX",
+    }
+
+    resultaten = {}
+
+    for naam, ticker in tickers.items():
+        try:
+            aandeel = yf.Ticker(ticker)
+            historie = aandeel.history(period="5d")
+
+            if historie.empty or len(historie) < 2:
+                resultaten[naam] = None
+                continue
+
+            laatste = float(historie["Close"].iloc[-1])
+            vorige = float(historie["Close"].iloc[-2])
+
+            verandering = ((laatste - vorige) / vorige) * 100
+
+            resultaten[naam] = {
+                "ticker": ticker,
+                "waarde": laatste,
+                "verandering_pct": verandering,
+            }
+
+        except Exception as fout:
+            print(f"Fout bij marktdata {ticker}: {fout}")
+            resultaten[naam] = None
+
+    return resultaten

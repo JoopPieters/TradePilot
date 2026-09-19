@@ -2,6 +2,7 @@ from data.yahoo import (
     lees_watchlist,
     haal_koers_op,
     haal_laatste_afgesloten_week,
+    haal_marktdata_op,
 )
 from indicators.ema import alle_ema
 from indicators.rsi import bereken_rsi
@@ -11,6 +12,8 @@ from strategy.trend import bepaal_trend
 
 def scan():
 
+    markt = haal_marktdata_op()
+
     resultaten = []
 
     for ticker in lees_watchlist():
@@ -19,20 +22,27 @@ def scan():
 
         if gegevens is None:
             continue
+
         invest_data = haal_laatste_afgesloten_week(ticker)
 
         if invest_data is None:
-            continue
-
+            print(f"WAARSCHUWING: {ticker} heeft geen invest-weekdata")
+            invest_close = None
+            invest_ema = None
+            invest_rsi = None
+            invest_macd = None
+            invest_signaal = None
+        else:
+            invest_close = invest_data["Close"]
+            invest_ema = alle_ema(invest_close)
+            invest_rsi = bereken_rsi(invest_close)
+            invest_macd, invest_signaal = bereken_macd(invest_close)
+          
         close = gegevens["historie"]["Close"]
         prijs = gegevens["prijs"]
         openingskoers = gegevens["open"]
         boven_open = prijs >= openingskoers
-        invest_close = invest_data["Close"]
-        invest_ema = alle_ema(invest_close)
-        invest_rsi = bereken_rsi(invest_close)
-        invest_macd, invest_signaal = bereken_macd(invest_close)
-
+       
         ema = alle_ema(close)
         rsi = bereken_rsi(close)
         macd, signaal = bereken_macd(close)
@@ -43,7 +53,7 @@ def scan():
             rsi,
             macd,
             signaal,
-            invest_close.iloc[-1],
+            invest_close.iloc[-1] if invest_close is not None else None,
             invest_ema,
             invest_rsi,
             invest_macd,
@@ -69,6 +79,7 @@ def scan():
         resultaten.append({
             "ticker": ticker,
             "prijs": prijs,
+            "markt": markt,
             "open": openingskoers,
             "boven_open": boven_open,
 
@@ -90,8 +101,8 @@ def scan():
             "trendscore": trend["score"],
         })
                
-        resultaten.sort(
-            key=lambda x: x["score_swing"],
-            reverse=True
-        )
+    resultaten.sort(
+        key=lambda x: x["score_swing"],
+        reverse=True
+    )
     return resultaten
